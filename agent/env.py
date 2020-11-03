@@ -2,7 +2,7 @@ import gym
 from gym.utils import seeding
 from gym_grid_driving.envs.grid_driving import LaneSpec
 
-def construct_random_lane_env():
+def construct_random_lane_env(): #Tensor version for DQN
     config = {'observation_type': 'tensor', 'agent_speed_range': [-3, -1], 'width': 50,
               'lanes': [LaneSpec(cars=7, speed_range=[-3, -1]), 
                         LaneSpec(cars=8, speed_range=[-3, -1]), 
