@@ -32,6 +32,10 @@ class GridWorldState():
         '''
         self.state = deepcopy(state)
         self.is_done = is_done #if is_done else False
+
+        #Implement speed range
+        self.speed_range =
+
         # if self.state.agent.position.x < 0:
         #     self.is_done = True
         #     self.state.agent.position.x = 0

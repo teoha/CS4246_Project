@@ -130,6 +130,7 @@ class ExampleAgent(Agent):
         print('>>> RESET >>>')
         print('state:', state)
         '''
+        # Reset speed range for each lane
         
 
     def step(self, state, *args, **kwargs):
@@ -171,6 +172,7 @@ class ExampleAgent(Agent):
 
 
             # TODO: Train the dqn with D (reward is estimated q for (s,action))
+            # delta = Q(s,a) - d where d is element of D
             for j in train_steps:
                 loss = optimize(self.model, target, transitions_tuple, optimizer)
 
@@ -210,6 +212,12 @@ class ExampleAgent(Agent):
         print('done:', done)
         print('info:', info)
         '''
+
+        # TODO: Update current state
+        # Step: state ->(position,...) -> state
+        # Update: state -> (new position,....): speedrange -> state
+
+
 
 
 def create_agent(test_case_id, *args, **kwargs):
