@@ -26,10 +26,11 @@ env = construct_random_lane_env()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 script_path = os.path.dirname(os.path.realpath(__file__))
 model_path = os.path.join(script_path, 'model.pt')
-train_steps = 10
+train_steps = 10 #dqn training steps
 T = 1
 RANDOM_SEED = 1234
-numiters = 100
+max_iterations = 100 #dagger iteration
+numiters = 100 #mcts iterations
 
 # Transition = collections.namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
 
@@ -39,14 +40,17 @@ def simulatePolicy(state, model, env):
     '''
     # reward = 0.
     states = []
-    print(state)
-    while not state.isDone():
+    state = torch.tensor(state.state)
+    isDone = False
+    while not isDone:
         # Get best action at state
         actions_q = model.forward(state)
         max_q, action = torch.max(actions_q[0],0)
 
         states.append(state)
         state = state.simulateStep(env=env,action=action)
+        isDone = state.isDone()
+        state = toch.tensor(state.state)
         # reward += state.getReward()
 
     return states
@@ -105,7 +109,6 @@ class ExampleAgent(Agent):
         self.mcts = MonteCarloTreeSearch(env=env, numiters=numiters, explorationParam=1.,random_seed=RANDOM_SEED)
 
         # Dagger variables
-        self.max_iterations = 100
         self.model = AtariDQN(env.observation_space.shape, env.action_space.n).to(device) #Torch default weights (can be any policy)
 
 
@@ -152,18 +155,18 @@ class ExampleAgent(Agent):
         D = []
         
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-        curr_state = GridWorldState(state=state, is_done=done)
+        curr_state = GridWorldState(state=state, is_done=False)
 
         #Execute dagger
-        for i in range(self.max_iterations):
+        for i in range(max_iterations):
             # TODO implement probability beta to use current policy
-            states = simulatePolicy(state, self.model, env) # States traversed by rollout using current
+            states = simulatePolicy(curr_state, self.model, env) # States traversed by rollout using current policy
 
             # Run MCTS to get best action for each state s
             for s in states:
                 done = False
                 gw_state = GridWorldState(state=s, is_done=done)
-                action, reward = self.mcts.buildTreeAndReturnBestAction(initialState=gw_state)
+                action, reward = self.mcts.buildTreeAndReturnBestActionValue(initialState=gw_state)
                 D.append((s, action, reward))
 
 
