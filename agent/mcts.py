@@ -1,5 +1,6 @@
 from copy import deepcopy
 import gym
+import torch
 from gym.utils import seeding
 import gym_grid_driving
 from gym_grid_driving.envs.grid_driving import LaneSpec, MaskSpec, Point
@@ -7,15 +8,19 @@ import math
 
 random = None
 
-def randomPolicy(state, env):
+
+def playoutPolicy(state, model, env):
     '''
-    Policy followed in MCTS simulation for playout
+    Using apprentice model in MCTS simulation for playout
     '''
-    global random
     reward = 0.
-    while not state.isDone():
-        action = random.choice(env.actions)
-        state = state.simulateStep(env=env,action=action)
+    state = torch.tensor(state.state)
+    isDone = False
+    while not isDone:
+        # Get best action at state
+        actions_q = model.forward(state)
+        max_q, action = torch.max(actions_q[0],0)
+        state = state.simulateStep(env=env, action=action)
         reward += state.getReward()
     return reward
 
@@ -33,8 +38,9 @@ class GridWorldState():
         self.state = deepcopy(state)
         self.is_done = is_done #if is_done else False
 
+        # TODO: Implement Speed Range Here
         #Implement speed range
-        self.speed_range =
+        self.speed_range = []
 
         # if self.state.agent.position.x < 0:
         #     self.is_done = True
@@ -82,7 +88,7 @@ class Node:
         self.children = {}
 
 class MonteCarloTreeSearch:
-    def __init__(self, env, numiters, explorationParam, playoutPolicy=randomPolicy, random_seed=None):
+    def __init__(self, env, numiters, explorationParam, model, playoutPolicy=playoutPolicy, random_seed=None):
         '''
         self.numiters : Number of MCTS iterations
         self.explorationParam : exploration constant used in computing value of node
@@ -94,6 +100,7 @@ class MonteCarloTreeSearch:
         self.explorationParam = explorationParam
         self.playoutPolicy = playoutPolicy
         self.root = None
+        self.model = model
         global random
         random, seed = seeding.np_random(random_seed)
 
@@ -109,24 +116,12 @@ class MonteCarloTreeSearch:
             if cur_node is bestChild:
                return action
 
-    def buildTreeAndReturnBestActionReward(self, initialState):
-        '''
-        Function to build MCTS tree and return best action at initialState
-        '''
-        self.root = Node(state=initialState, parent=None)
-        for i in range(self.numiters):
-            self.addNodeAndBackpropagate()
-        bestChild = self.chooseBestActionNode(self.root, 0)
-        for action, cur_node in self.root.children.items():
-            if cur_node is bestChild:
-               return (action, cur_node.totalReward)
-
     def addNodeAndBackpropagate(self):
         '''
         Function to run a single MCTS iteration
         '''
         node = self.addNode()
-        reward = self.playoutPolicy(node.state, self.env)
+        reward = self.playoutPolicy(node.state, self.env, self.model)
         self.backpropagate(node, reward)
 
     def addNode(self):
@@ -180,6 +175,4 @@ class MonteCarloTreeSearch:
                 bestValue=v
             elif v==bestValue:
                 bestNodes.append(child)
-
-
         return random.choice(bestNodes)

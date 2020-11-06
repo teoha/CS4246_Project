@@ -34,11 +34,12 @@ numiters = 100 #mcts iterations
 
 # Transition = collections.namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
 
+
 def simulatePolicy(state, model, env):
     '''
-    Policy followed in MCTS simulation for playout
+    Using apprentice model in MCTS simulation for playout
     '''
-    # reward = 0.
+    reward = 0.
     states = []
     state = torch.tensor(state.state)
     isDone = False
@@ -46,13 +47,11 @@ def simulatePolicy(state, model, env):
         # Get best action at state
         actions_q = model.forward(state)
         max_q, action = torch.max(actions_q[0],0)
-
         states.append(state)
         state = state.simulateStep(env=env,action=action)
         isDone = state.isDone()
-        state = toch.tensor(state.state)
-        # reward += state.getReward()
-
+        state = torch.tensor(state.state)
+        reward += state.getReward()
     return states
 
 
@@ -105,12 +104,11 @@ class ExampleAgent(Agent):
         # TODO: Tune variables
         global env
 
-        # Initialize mcts simulator
-        self.mcts = MonteCarloTreeSearch(env=env, numiters=numiters, explorationParam=1.,random_seed=RANDOM_SEED)
-
         # Dagger variables
-        self.model = AtariDQN(env.observation_space.shape, env.action_space.n).to(device) #Torch default weights (can be any policy)
+        self.model = AtariDQN(env.observation_space.shape, env.action_space.n).to(device)  # Torch default weights (can be any policy)
 
+        # Initialize mcts simulator with the apprentice model as the playout policy
+        self.mcts = MonteCarloTreeSearch(env=env, numiters=numiters, explorationParam=1.,random_seed=RANDOM_SEED, model=self.model)
 
     def reset(self, state, *args, **kwargs):
         ''' 
@@ -167,14 +165,14 @@ class ExampleAgent(Agent):
             for s in states:
                 done = False
                 gw_state = GridWorldState(state=s, is_done=done)
-                action, reward = self.mcts.buildTreeAndReturnBestActionValue(initialState=gw_state)
-                D.append((s, action, reward))
+                action = self.mcts.buildTreeAndReturnBestAction(initialState=gw_state)
+                next_state, reward, done, info = env.step(state, action=action)
+                D.append(state, action, next_state, reward, done)
 
 
             # TODO: Train the dqn with D (reward is estimated q for (s,action))
             # delta = Q(s,a) - d where d is element of D
-            for j in train_steps:
-                loss = optimize(self.model, target, transitions_tuple, optimizer)
+            loss = optimize(self.model, D, optimizer)
 
 
     def update(self, *args, **kwargs):
@@ -225,6 +223,7 @@ def create_agent(test_case_id, *args, **kwargs):
     Method that will be called to create your agent during testing.
     You can, for example, initialize different class of agent depending on test case.
     '''
+
     return ExampleAgent(test_case_id=test_case_id)
 
 
