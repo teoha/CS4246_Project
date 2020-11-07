@@ -9,18 +9,15 @@ import math
 random = None
 
 
-def playoutPolicy(state, model, env):
+def randomPolicy(state, env):
     '''
-    Using apprentice model in MCTS simulation for playout
+    Policy followed in MCTS simulation for playout
     '''
+    global random
     reward = 0.
-    state = torch.tensor(state.state)
-    isDone = False
-    while not isDone:
-        # Get best action at state
-        actions_q = model.forward(state)
-        max_q, action = torch.max(actions_q[0],0)
-        state = state.simulateStep(env=env, action=action)
+    while not state.isDone():
+        action = random.choice(env.actions)
+        state = state.simulateStep(env=env,action=action)
         reward += state.getReward()
     return reward
 
@@ -116,6 +113,16 @@ class MonteCarloTreeSearch:
             if cur_node is bestChild:
                return action
 
+    def buildTreeAndReturnQValues(self, initialState):
+        '''
+        Function to build MCTS tree and return best action at initialState
+        '''
+        self.root = Node(state=initialState, parent=None)
+        for i in range(self.numiters):
+            self.addNodeAndBackpropagate()
+        Q_values = self.findQValues(self.root)
+        return Q_values
+
     def addNodeAndBackpropagate(self):
         '''
         Function to run a single MCTS iteration
@@ -156,6 +163,20 @@ class MonteCarloTreeSearch:
             return
         else:
             self.backpropagate(node.parent,reward)
+
+    def findQValues(self, node):
+        q_values = [0 for i in range(0, len(node.children))]
+        for action, child in node.children:
+            '''
+            FILL ME : Populate the list bestNodes with all children having maximum value
+
+                       Value of all nodes should be computed as mentioned in question 3(b).
+                       All the nodes that have the largest value should be included in the list bestNodes.
+                       We will then choose one of the nodes in this list at random as the best action node. 
+            '''
+            v = (child.totalReward / child.numVisits)
+            q_values[action] = v
+        return q_values
 
     def chooseBestActionNode(self, node, explorationValue):
         global random

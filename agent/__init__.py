@@ -165,10 +165,8 @@ class ExampleAgent(Agent):
             for s in states:
                 done = False
                 gw_state = GridWorldState(state=s, is_done=done)
-                action = self.mcts.buildTreeAndReturnBestAction(initialState=gw_state)
-                next_state, reward, done, info = env.step(state, action=action)
-                D.append(state, action, next_state, reward, done)
-
+                q_values = self.mcts.buildTreeAndReturnQValues(initialState=gw_state)
+                D.append(state, q_values)
 
             # TODO: Train the dqn with D (reward is estimated q for (s,action))
             # delta = Q(s,a) - d where d is element of D
