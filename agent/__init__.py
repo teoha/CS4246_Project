@@ -159,14 +159,13 @@ class ExampleAgent(Agent):
         # Initialize Dagger
         D = []
         # print(state.shape)
-        newState =  np.concatenate((state,self.prevState),0) #Modified state with prev state
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-        curr_state = GridWorldState(state=newState, is_done=False)
+        # curr_state = GridWorldState(state=newState, is_done=False)
 
         #Execute dagger
         for i in range(max_iterations):
             # TODO implement probability beta to use current policy
-            states = simulatePolicy(curr_state, self.model, env) # States traversed by rollout using current policy
+            states = simulatePolicy(state, self.model, env) # States traversed by rollout using current policy
 
             # Run MCTS to get best action for each state s
             for s in states:
@@ -220,7 +219,7 @@ class ExampleAgent(Agent):
         # Step: state ->(position,...) -> state
         # Update: state -> (new position,....): speedrange -> state
 
-        self.prevState = np.expand_dims(state[0], 0)
+        # self.prevState = np.expand_dims(state[0], 0)
 
 
 def create_agent(test_case_id, *args, **kwargs):
