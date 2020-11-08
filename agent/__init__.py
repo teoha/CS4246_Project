@@ -41,20 +41,21 @@ def simulatePolicy(state, model, env):
     Using apprentice model in MCTS simulation for playout.
     '''
     reward = 0.
-    states = [state]
+    states = [GridWorldState(state=deepcopy(state), isDone=isDone)]
     isDone = False
     while not isDone:
         # Generate next best action with apprentice model
-        tensor_state = torch.FloatTensor(state.state)
+        tensor_state = torch.FloatTensor(state)
         model_state = torch.unsqueeze(tensor_state, 0)
         actions_q = model.forward(model_state)
         max_q, action = torch.max(actions_q[0],0)
         # Transform state to GridWorldState
-        state = GridWorldState(state=state, is_done=isDone)
-        next_state = state.simulateStep(env=env,action=action)
-        states.append(next_state)
+        next_state, done, reward, info = env.step(action)
+        isDone = done
+        grid_state = GridWorldState(state=deepcopy(next_state), isDone=isDone, reward=reward)
+        states.append(grid_state)
         # Transform back to tuple form
-        state = next_state.state
+        state = next_state
     return states
 
 
