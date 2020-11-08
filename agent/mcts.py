@@ -5,6 +5,7 @@ from gym.utils import seeding
 import gym_grid_driving
 from gym_grid_driving.envs.grid_driving import LaneSpec, MaskSpec, Point
 import math
+import numpy as np
 
 random = None
 
@@ -37,7 +38,7 @@ class GridWorldState():
 
         # TODO: Implement Speed Range Here
         #Implement speed range
-        self.speed_range = []
+        # self.speed_range = []
 
         # if self.state.agent.position.x < 0:
         #     self.is_done = True
@@ -49,7 +50,8 @@ class GridWorldState():
         Simulates action at self.state and returns the next state
         '''
         state_desc = env.step(state=deepcopy(self.state), action= action)
-        newState  = GridWorldState(state=state_desc[0], reward=state_desc[1], is_done=state_desc[2])
+        modifiedState = np.concatenate((state_desc[0],np.expand_dims(self.state[0], 0)), 0)
+        newState  = GridWorldState(state=modifiedState, reward=state_desc[1], is_done=state_desc[2])
         return newState
 
     def isDone(self):
@@ -85,7 +87,7 @@ class Node:
         self.children = {}
 
 class MonteCarloTreeSearch:
-    def __init__(self, env, numiters, explorationParam, model, playoutPolicy=playoutPolicy, random_seed=None):
+    def __init__(self, env, numiters, explorationParam, model, playoutPolicy=randomPolicy, random_seed=None):
         '''
         self.numiters : Number of MCTS iterations
         self.explorationParam : exploration constant used in computing value of node

@@ -21,6 +21,7 @@ from dqn import *
 from env import *
 from models import AtariDQN
 import torch.optim as optim
+import numpy as np
 
 env = construct_random_lane_env()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,7 +38,7 @@ numiters = 100 #mcts iterations
 
 def simulatePolicy(state, model, env):
     '''
-    Using apprentice model in MCTS simulation for playout
+    Using apprentice model in MCTS simulation for playout.
     '''
     reward = 0.
     states = []
@@ -45,6 +46,7 @@ def simulatePolicy(state, model, env):
     isDone = False
     while not isDone:
         # Get best action at state
+        print(state.shape)
         actions_q = model.forward(state)
         max_q, action = torch.max(actions_q[0],0)
         states.append(state)
@@ -105,10 +107,13 @@ class ExampleAgent(Agent):
         global env
 
         # Dagger variables
-        self.model = AtariDQN(env.observation_space.shape, env.action_space.n).to(device)  # Torch default weights (can be any policy)
+        self.model = AtariDQN((5,10,50), env.action_space.n).to(device)  # Torch default weights (can be any policy)
 
         # Initialize mcts simulator with the apprentice model as the playout policy
         self.mcts = MonteCarloTreeSearch(env=env, numiters=numiters, explorationParam=1.,random_seed=RANDOM_SEED, model=self.model)
+
+        # Initialize empty prev state
+        self.prevState = np.zeros((1,10,50))
 
     def reset(self, state, *args, **kwargs):
         ''' 
@@ -152,9 +157,10 @@ class ExampleAgent(Agent):
         '''
         # Initialize Dagger
         D = []
-        
+        # print(state.shape)
+        newState =  np.concatenate((state,self.prevState),0) #Modified state with prev state
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-        curr_state = GridWorldState(state=state, is_done=False)
+        curr_state = GridWorldState(state=newState, is_done=False)
 
         #Execute dagger
         for i in range(max_iterations):
@@ -213,7 +219,7 @@ class ExampleAgent(Agent):
         # Step: state ->(position,...) -> state
         # Update: state -> (new position,....): speedrange -> state
 
-
+        self.prevState = np.expand_dims(state[0], 0)
 
 
 def create_agent(test_case_id, *args, **kwargs):
