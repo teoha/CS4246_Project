@@ -51,7 +51,7 @@ def simulatePolicy(state, model, env):
         actions_q = model.forward(model_state)
         max_q, action = torch.max(actions_q[0],0)
         states.append(state)
-        state = GridWorldState(state=state[:4], is_done=isDone)
+        state = GridWorldState(state=state[:4].numpy(), is_done=isDone)
         state = state.simulateStep(env=env,action=action)
         isDone = state.isDone()
         state = torch.tensor(state.state)
