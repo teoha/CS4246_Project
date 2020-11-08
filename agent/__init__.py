@@ -48,13 +48,17 @@ def simulatePolicy(state, model, env):
         tensor_state = torch.FloatTensor(state)
         model_state = torch.unsqueeze(tensor_state, 0)
         actions_q = model.forward(model_state)
-        max_q, action = torch.max(actions_q[0],0)
+        max_q, action = torch.max(actions_q[0], 0)
         # Transform state to GridWorldState
-        next_state, done, reward, info = env.step(action)
+        next_state, done, reward, info = env.step(action.item())
         isDone = done
-        grid_state = GridWorldState(state=deepcopy(next_state), isDone=isDone, reward=reward)
+        grid_state = GridWorldState(state=deepcopy(next_state), is_done=isDone, reward=reward,
+                                    prevState=deepcopy(state))
         states.append(grid_state)
-        # Transform back to tuple form
+        # transform next_state to torch!
+        next_state_tensor = torch.FloatTensor(next_state)
+        state_tensor = torch.FloatTensor(state)
+        next_state = torch.cat([next_state_tensor, state_tensor[0:1, :, :]], 0)
         state = next_state
     return states
 
@@ -166,6 +170,8 @@ class ExampleAgent(Agent):
         #Execute dagger
         for i in range(max_iterations):
             # TODO implement probability beta to use current policy
+
+            # Run different trajetories
             states = simulatePolicy(state, self.model, env) # States traversed by rollout using current policy
 
             # Run MCTS to get best action for each state s
