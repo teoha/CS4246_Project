@@ -53,6 +53,8 @@ def simulatePolicy(state, model, env):
         state = GridWorldState(state=state, is_done=isDone)
         next_state = state.simulateStep(env=env,action=action)
         states.append(next_state)
+        # Transform back to tuple form
+        state = next_state.state
     return states
 
 

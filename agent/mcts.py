@@ -23,7 +23,7 @@ def randomPolicy(state, env):
     return reward
 
 class GridWorldState():
-    def __init__(self, state, reward = 0, is_done=False):
+    def __init__(self, state, reward = 0, is_done=False, prevState=None):
         '''
         Data structure to represent state of the environment
         self.env : Environment of gym_grid_environment simulator
@@ -35,6 +35,7 @@ class GridWorldState():
         '''
         self.state = deepcopy(state)
         self.is_done = is_done #if is_done else False
+        self.prevState = deepcopy(prevState)
 
         # TODO: Implement Speed Range Here
         #Implement speed range
@@ -49,11 +50,9 @@ class GridWorldState():
         '''
         Simulates action at self.state and returns the next state
         '''
-        print("MCTS state shape: ")
-        print(self.state.shape)
         state_desc = env.step(state=deepcopy(self.state), action= action)
-        modifiedState = np.concatenate((state_desc[0],np.expand_dims(self.state[0], 0)), 0)
-        newState  = GridWorldState(state=modifiedState, reward=state_desc[1], is_done=state_desc[2])
+        # modifiedState = np.concatenate((state_desc[0],np.expand_dims(self.state[0], 0)), 0)
+        newState  = GridWorldState(state=state_desc, reward=state_desc[1], is_done=state_desc[2], prevState = self.state)
         return newState
 
     def isDone(self):
