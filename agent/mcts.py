@@ -49,6 +49,7 @@ class GridWorldState():
         '''
         Simulates action at self.state and returns the next state
         '''
+        print(env.observation_space.shape)
         state_desc = env.step(state=deepcopy(self.state), action= action)
         modifiedState = np.concatenate((state_desc[0],np.expand_dims(self.state[0], 0)), 0)
         newState  = GridWorldState(state=modifiedState, reward=state_desc[1], is_done=state_desc[2])

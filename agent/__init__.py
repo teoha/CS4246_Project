@@ -42,14 +42,16 @@ def simulatePolicy(state, model, env):
     '''
     reward = 0.
     states = []
-    state = torch.tensor(state.state)
+    state = torch.FloatTensor(state.state)
     isDone = False
     while not isDone:
         # Get best action at state
-        print(state.shape)
-        actions_q = model.forward(state)
+        # print(state.shape)
+        model_state = torch.unsqueeze(state, 0)
+        actions_q = model.forward(model_state)
         max_q, action = torch.max(actions_q[0],0)
         states.append(state)
+        state = GridWorldState(state=state[:4], is_done=isDone)
         state = state.simulateStep(env=env,action=action)
         isDone = state.isDone()
         state = torch.tensor(state.state)

@@ -56,6 +56,7 @@ def optimize(model, D, optimizer):
     states = np.stack(d['state'])
     q_values = np.stack(d['q_values'])
     batch = (states, q_values)
+    print(batch.shape)
 
     loss = compute_loss(model, *batch)
     optimizer.zero_grad()
